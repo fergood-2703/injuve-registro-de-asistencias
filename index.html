@@ -32,6 +32,7 @@
     <form class="acceso anim" id="fEntrar" novalidate>
       <h1>Entrar</h1>
       <p class="sub">Solo personal de INJUVE.</p>
+      <div class="alerta ok" id="eOk" hidden></div>
       <label class="campo"><span>Correo</span><input class="entrada" type="email" id="eCorreo" autocomplete="username" required></label>
       <label class="campo"><span>Contraseña</span><input class="entrada" type="password" id="eClave" autocomplete="current-password" required></label>
       <div class="alerta err" id="eErr" hidden></div>
@@ -115,7 +116,7 @@
 
   <div class="abajo anim">
     <img src="img/gobierno.png" alt="H. Ayuntamiento y Gobierno de Playa del Carmen">
-    <div class="quien"><span>Hola, <a class="link" href="panel.html#perfil" id="quien" title="Mi perfil"></a></span><button class="link" type="button" id="salir">Cerrar sesión</button></div>
+    <div class="quien"><span>Hola, <b id="quien"></b></span><a class="btn suave sm" href="panel.html#perfil">Mi perfil</a></div>
   </div>
 </main>
 

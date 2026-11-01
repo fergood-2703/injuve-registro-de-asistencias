@@ -89,6 +89,7 @@ begin
     raise exception 'correo_no_autorizado';
   end if;
   n := nullif(trim(new.raw_user_meta_data ->> 'nombre'), '');
+  if n ~ '[@0-9]' then n := null; end if;  -- se pedirá en "Completa tu perfil"
   t := nullif(regexp_replace(coalesce(new.raw_user_meta_data ->> 'telefono', ''), '\D', '', 'g'), '');
   update public.personal set nombre = coalesce(n, nombre), telefono = coalesce(t, telefono)
   where lower(email) = lower(new.email);
@@ -114,7 +115,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare n text := trim(p_nombre); t text := regexp_replace(coalesce(p_telefono, ''), '\D', '', 'g');
 begin
   if not public.es_personal() then raise exception 'no_autorizado'; end if;
-  if char_length(n) < 3 then raise exception 'nombre_invalido'; end if;
+  if char_length(n) < 3 or n ~ '[@0-9]' then raise exception 'nombre_invalido'; end if;
   if t !~ '^[0-9]{10}$' then raise exception 'telefono_invalido'; end if;
   update public.personal set nombre = n, telefono = t
   where lower(email) = lower(auth.jwt() ->> 'email');

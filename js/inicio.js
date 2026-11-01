@@ -40,7 +40,7 @@
   // Acceso
   function modo(m) {
     $("fEntrar").hidden = m !== "entrar"; $("fPrimera").hidden = m !== "primera"; $("fOlvido").hidden = m !== "olvido";
-    ["eErr", "pErr", "pOk", "oErr", "oOk"].forEach(x => $(x).hidden = true);
+    ["eErr", "eOk", "pErr", "pOk", "oErr", "oOk"].forEach(x => $(x).hidden = true);
     const correo = $("eCorreo").value || $("pCorreo").value || $("oCorreo").value;
     if (correo) { $("eCorreo").value = $("pCorreo").value = $("oCorreo").value = correo; }
     const f = { entrar: "fEntrar", primera: "fPrimera", olvido: "fOlvido" }[m];
@@ -69,7 +69,8 @@
     e.preventDefault(); msg("pErr", ""); msg("pOk", "");
     const nombre = $("pNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("pTel").value);
     const correo = $("pCorreo").value.trim(), c1 = $("pClave").value, c2 = $("pClave2").value;
-    if (nombre.length < 3) return msg("pErr", "Escribe tu nombre completo.");
+    const errNombre = App.validarNombre(nombre);
+    if (errNombre) return msg("pErr", errNombre);
     if (tel.length !== 10) return msg("pErr", "El teléfono debe tener 10 dígitos.");
     if (!App.correoValido(correo)) return msg("pErr", "Escribe tu correo autorizado.");
     if (c1.length < 8) return msg("pErr", "La contraseña debe tener al menos 8 caracteres.");
@@ -84,9 +85,19 @@
     // Supabase no da error si el correo ya existía: en ese caso "identities" viene vacío
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
       return msg("pErr", "Este correo ya tiene contraseña. Usa «Entrar» o «¿Olvidaste tu contraseña?».");
-    if (!data.session) return msg("pOk", "¡Listo! Te mandamos un correo para confirmar tu cuenta. Ábrelo y después entra con tu contraseña.");
+    // Cuenta creada: se bloquea el formulario y se regresa a "Entrar"
+    $("fPrimera").querySelectorAll("input, button").forEach(el => el.disabled = true);
     $("pClave").value = $("pClave2").value = "";
-    arrancar();
+    if (data.session) { arrancar(); return; }
+    msg("pOk", "¡Cuenta creada! Te llevamos a «Entrar»…");
+    setTimeout(() => {
+      $("fPrimera").querySelectorAll("input, button").forEach(el => el.disabled = false);
+      $("fPrimera").reset();
+      $("eCorreo").value = correo;
+      modo("entrar");
+      msg("eOk", "Te mandamos un correo para confirmar tu cuenta. Ábrelo y después entra aquí con tu contraseña.");
+      $("eClave").focus();
+    }, 2500);
   });
 
   $("fOlvido").addEventListener("submit", async e => {
@@ -106,7 +117,8 @@
   $("fPerfil").addEventListener("submit", async e => {
     e.preventDefault(); msg("cErr", "");
     const nombre = $("cNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("cTel").value);
-    if (nombre.length < 3) return msg("cErr", "Escribe tu nombre completo.");
+    const errNombre = App.validarNombre(nombre);
+    if (errNombre) return msg("cErr", errNombre);
     if (tel.length !== 10) return msg("cErr", "El teléfono debe tener 10 dígitos.");
     ocupado($("cBtn"), true, "Guardando…");
     const { error } = await sb.rpc("actualizar_perfil", { p_nombre: nombre, p_telefono: tel });
@@ -168,7 +180,6 @@
   $("saIr").addEventListener("click", () => { App.modal("sinActividad", false); irA("verde", "Entrando al panel…", "panel.html#crear", $("saIr")); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") App.modal("sinActividad", false); });
 
-  $("salir").addEventListener("click", async () => { clearInterval(refresco); await sb.auth.signOut(); mostrarEscena("escenaAcceso"); modo("entrar"); });
 
   // Arranque
   async function arrancar() {

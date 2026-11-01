@@ -64,6 +64,13 @@
       return (data && data[0]) || null;
     },
     perfilCompleto: p => !!(p && p.nombre && p.telefono),
+    // Devuelve un mensaje si el nombre no es válido (vacío, con @ o con números)
+    validarNombre(n) {
+      if (/@/.test(n)) return "En «Nombre completo» escribe tu nombre, no tu correo.";
+      if (/\d/.test(n)) return "El nombre no puede llevar números.";
+      if (n.length < 3 || !/\s/.test(n)) return "Escribe tu nombre completo (nombre y apellido).";
+      return "";
+    },
     soloDigitos: t => String(t || "").replace(/\D/g, ""),
 
     // Deja constancia en el historial (inicio de sesión, descarga de Excel, cambio de contraseña)

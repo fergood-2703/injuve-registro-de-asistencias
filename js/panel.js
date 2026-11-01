@@ -48,6 +48,7 @@
     $("tabAct").setAttribute("aria-current", vista === "vAct" ? "page" : "false");
     $("tabHist").setAttribute("aria-current", vista === "vHist" ? "page" : "false");
     $("tabCfg").setAttribute("aria-current", vista === "vCfg" ? "page" : "false");
+    $("tabPerfil").setAttribute("aria-current", vista === "vPerfil" ? "page" : "false");
     if (vista === "vCfg") cargarConfiguracion();
     if (vista === "vHist") iniciarHistorial();
     if (vista === "vPerfil") pintarPerfil();
@@ -314,7 +315,7 @@
 
   // Mi perfil
   function formatoTel(t) { const d = App.soloDigitos(t); return d.length === 10 ? d.slice(0, 3) + " " + d.slice(3, 6) + " " + d.slice(6) : d; }
-  function pintarEncabezado() { $("quien").textContent = perfil.nombre; }
+  function pintarEncabezado() { $("sesionTxt").textContent = "Conectado como " + perfil.nombre + " (" + yo.email + ")."; }
   function pintarPerfil() {
     $("pfNombre").value = perfil.nombre || ""; $("pfTel").value = formatoTel(perfil.telefono); $("pfCorreo").value = yo.email;
     msg("pfMsg", "");
@@ -323,7 +324,8 @@
   $("fPerfil").addEventListener("submit", async e => {
     e.preventDefault();
     const nombre = $("pfNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("pfTel").value);
-    if (nombre.length < 3) return msg("pfMsg", "Escribe tu nombre completo.", "err");
+    const errNombre = App.validarNombre(nombre);
+    if (errNombre) return msg("pfMsg", errNombre, "err");
     if (tel.length !== 10) return msg("pfMsg", "El teléfono debe tener 10 dígitos.", "err");
     if (nombre === perfil.nombre && tel === perfil.telefono) return msg("pfMsg", "No hay cambios por guardar.", "warn");
     $("pfBtn").disabled = true;
