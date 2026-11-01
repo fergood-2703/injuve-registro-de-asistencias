@@ -55,7 +55,14 @@
     const e = $("error"); e.textContent = t; e.hidden = !t;
     if (t) e.scrollIntoView({ block: "center", behavior: "smooth" });
   }
-  $("tel").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^\d ]/g, ""); });
+  // Validación en vivo
+  App.mascaraTel($("tel"));
+  const campos = [
+    App.vigilar($("nombre"), App.reglas.nombreCompleto),
+    App.vigilar($("tel"), App.reglas.telefonoOpcional),
+    App.vigilar($("correo"), App.reglas.correoOpcional),
+    App.vigilar($("tutor"), v => $("menor").hidden || App.limpiarTexto(v).length >= 3 ? "" : "Escribe el nombre del padre, madre o tutor.")
+  ];
   $("borrarFirma").addEventListener("click", () => firma.borrar());
 
   $("form").addEventListener("submit", async e => {
@@ -65,12 +72,9 @@
     const telefono = $("tel").value.replace(/\D/g, ""), correo = $("correo").value.trim();
     const menor = MENORES.includes(edad), tutor = $("tutor").value.trim();
 
-    if (nombre.length < 3) return error("Escribe tu nombre completo.");
+    if (!App.revisarTodos(campos.filter(c => c.id !== "tutor" || menor))) return;
     if (!edad) return error("Elige tu rango de edad.");
     if (!genero) return error("Elige una opción de género.");
-    if (telefono && telefono.length !== 10) return error("El teléfono debe tener 10 dígitos, o déjalo vacío.");
-    if (correo && !App.correoValido(correo)) return error("Revisa el correo electrónico, o déjalo vacío.");
-    if (menor && tutor.length < 3) return error("Escribe el nombre del padre, madre o tutor.");
     if (menor && !$("tutorOk").checked) return error("Falta la autorización del padre, madre o tutor.");
     if (!firma.tieneFirma()) return error("Falta tu firma en el recuadro.");
     if (!$("avisoOk").checked) return error("Para registrarte, acepta el aviso de privacidad.");
@@ -93,7 +97,7 @@
     Gracias.mostrar(nombre, nombreActividad, siguiente);
   });
 
-  function limpiar() { $("form").reset(); $("menor").hidden = true; firma.borrar(); error(""); }
+  function limpiar() { $("form").reset(); $("menor").hidden = true; firma.borrar(); error(""); campos.forEach(c => c._limpiar()); }
   async function siguiente() {
     // Revisa que la actividad siga abierta antes de la siguiente persona
     const { data } = await sb.rpc("actividad_publica", { c: codigo });

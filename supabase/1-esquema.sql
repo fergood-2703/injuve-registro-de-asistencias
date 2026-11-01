@@ -8,9 +8,16 @@ create table if not exists public.personal (
   email    text primary key,
   agregado timestamptz not null default now()
 );
-alter table public.personal add column if not exists nombre text;
+alter table public.personal add column if not exists nombre text;      -- nombre completo (nombres + apellidos)
+alter table public.personal add column if not exists nombres text;
+alter table public.personal add column if not exists apellidos text;
 alter table public.personal add column if not exists telefono text;
 alter table public.personal add column if not exists autorizado_por text;
+-- Cuentas anteriores: separa el nombre completo en nombres y apellidos
+update public.personal
+set nombres = split_part(nombre, ' ', 1),
+    apellidos = nullif(trim(substr(nombre, length(split_part(nombre, ' ', 1)) + 1)), '')
+where nombres is null and nombre is not null;
 alter table public.personal enable row level security;
 -- Sin políticas: solo se accede con las funciones de abajo.
 
@@ -79,22 +86,33 @@ $$;
 -- 3) Cuentas y perfiles
 -- ---------------------------------------------------------------------
 
+-- Nombres y apellidos: solo letras, espacios, apóstrofo, punto y guion
+create or replace function public.nombre_valido(t text)
+returns boolean language sql immutable as $$
+  select char_length(trim(coalesce(t, ''))) >= 2
+     and trim(t) ~ '^[A-Za-zÁÉÍÓÚÜÑáéíóúüñÀÈÌÒÙàèìòùÇç'' .-]+$';
+$$;
+
 -- Solo se pueden crear cuentas con correos autorizados.
--- El nombre y teléfono llegan en los metadatos del registro.
+-- Nombres, apellidos y teléfono llegan en los metadatos del registro.
 create or replace function public.validar_alta()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare n text; t text;
+declare ns text; ap text; t text;
 begin
   if not exists (select 1 from public.personal where lower(email) = lower(new.email)) then
     raise exception 'correo_no_autorizado';
   end if;
-  n := nullif(trim(new.raw_user_meta_data ->> 'nombre'), '');
-  if n ~ '[@0-9]' then n := null; end if;  -- se pedirá en "Completa tu perfil"
+  ns := nullif(trim(new.raw_user_meta_data ->> 'nombres'), '');
+  ap := nullif(trim(new.raw_user_meta_data ->> 'apellidos'), '');
+  if not public.nombre_valido(ns) or not public.nombre_valido(ap) then ns := null; ap := null; end if;  -- se pedirán en "Completa tu perfil"
   t := nullif(regexp_replace(coalesce(new.raw_user_meta_data ->> 'telefono', ''), '\D', '', 'g'), '');
-  update public.personal set nombre = coalesce(n, nombre), telefono = coalesce(t, telefono)
+  if t !~ '^[0-9]{10}$' then t := null; end if;
+  update public.personal
+  set nombres = coalesce(ns, nombres), apellidos = coalesce(ap, apellidos),
+      nombre = coalesce(ns || ' ' || ap, nombre), telefono = coalesce(t, telefono)
   where lower(email) = lower(new.email);
   insert into public.historial (actor_email, actor_nombre, accion, detalle)
-  values (lower(new.email), coalesce(n, lower(new.email)), 'cuenta_creada', null);
+  values (lower(new.email), coalesce(ns || ' ' || ap, lower(new.email)), 'cuenta_creada', null);
   return new;
 end;
 $$;
@@ -103,26 +121,31 @@ create trigger validar_alta before insert on auth.users
   for each row execute function public.validar_alta();
 
 -- Perfil del usuario con sesión
-create or replace function public.mi_perfil()
-returns table (email text, nombre text, telefono text)
+drop function if exists public.mi_perfil();
+create function public.mi_perfil()
+returns table (email text, nombre text, nombres text, apellidos text, telefono text)
 language sql stable security definer set search_path = public as $$
-  select p.email, p.nombre, p.telefono from public.personal p
+  select p.email, p.nombre, p.nombres, p.apellidos, p.telefono from public.personal p
   where lower(p.email) = lower(coalesce(auth.jwt() ->> 'email', ''));
 $$;
 
-create or replace function public.actualizar_perfil(p_nombre text, p_telefono text)
+drop function if exists public.actualizar_perfil(text, text);
+create or replace function public.actualizar_perfil(p_nombres text, p_apellidos text, p_telefono text)
 returns void language plpgsql security definer set search_path = public as $$
-declare n text := trim(p_nombre); t text := regexp_replace(coalesce(p_telefono, ''), '\D', '', 'g');
+declare
+  ns text := regexp_replace(trim(p_nombres), '\s+', ' ', 'g');
+  ap text := regexp_replace(trim(p_apellidos), '\s+', ' ', 'g');
+  t text := regexp_replace(coalesce(p_telefono, ''), '\D', '', 'g');
 begin
   if not public.es_personal() then raise exception 'no_autorizado'; end if;
-  if char_length(n) < 3 or n ~ '[@0-9]' then raise exception 'nombre_invalido'; end if;
+  if not public.nombre_valido(ns) then raise exception 'nombre_invalido'; end if;
+  if not public.nombre_valido(ap) then raise exception 'apellido_invalido'; end if;
   if t !~ '^[0-9]{10}$' then raise exception 'telefono_invalido'; end if;
-  update public.personal set nombre = n, telefono = t
+  update public.personal set nombres = ns, apellidos = ap, nombre = ns || ' ' || ap, telefono = t
   where lower(email) = lower(auth.jwt() ->> 'email');
   perform public._evento('perfil_actualizado', null, null, null);
 end;
 $$;
-
 -- Lista de administradores
 drop function if exists public.lista_personal();
 create function public.lista_personal()

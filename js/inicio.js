@@ -48,14 +48,26 @@
     setTimeout(() => $(f).querySelector("input").focus(), 50);
   }
   document.querySelectorAll("[data-modo]").forEach(b => b.addEventListener("click", () => modo(b.dataset.modo)));
+
+  // Validación en vivo
+  const R = App.reglas;
+  App.vigilar($("eCorreo"), R.correo);
+  const camposPrimera = [
+    App.vigilar($("pNombres"), R.nombres), App.vigilar($("pApellidos"), R.apellidos),
+    App.vigilar($("pTel"), R.telefono), App.vigilar($("pCorreo"), R.correo),
+    App.vigilar($("pClave"), R.clave), App.vigilar($("pClave2"), v => v === $("pClave").value ? (v ? "" : "Repite la contraseña.") : "Las contraseñas no coinciden.")
+  ];
+  const camposPerfil = [App.vigilar($("cNombres"), R.nombres), App.vigilar($("cApellidos"), R.apellidos), App.vigilar($("cTel"), R.telefono)];
+  App.vigilar($("oCorreo"), R.correo);
+  [$("pTel"), $("cTel")].forEach(App.mascaraTel);
   function msg(id, txt) { $(id).textContent = txt; $(id).hidden = !txt; }
   function ocupado(btn, si, txt) { btn.disabled = si; if (txt) btn.textContent = txt; }
 
   $("fEntrar").addEventListener("submit", async e => {
     e.preventDefault(); msg("eErr", "");
     const correo = $("eCorreo").value.trim(), clave = $("eClave").value;
-    if (!App.correoValido(correo)) return msg("eErr", "Escribe tu correo.");
-    if (!clave) return msg("eErr", "Escribe tu contraseña.");
+    if (!$("eCorreo")._revisar()) return $("eCorreo").focus();
+    if (!clave) { msg("eErr", "Escribe tu contraseña."); return $("eClave").focus(); }
     ocupado($("eBtn"), true, "Entrando…");
     const { error } = await sb.auth.signInWithPassword({ email: correo, password: clave });
     ocupado($("eBtn"), false, "Entrar");
@@ -67,18 +79,13 @@
 
   $("fPrimera").addEventListener("submit", async e => {
     e.preventDefault(); msg("pErr", ""); msg("pOk", "");
-    const nombre = $("pNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("pTel").value);
-    const correo = $("pCorreo").value.trim(), c1 = $("pClave").value, c2 = $("pClave2").value;
-    const errNombre = App.validarNombre(nombre);
-    if (errNombre) return msg("pErr", errNombre);
-    if (tel.length !== 10) return msg("pErr", "El teléfono debe tener 10 dígitos.");
-    if (!App.correoValido(correo)) return msg("pErr", "Escribe tu correo autorizado.");
-    if (c1.length < 8) return msg("pErr", "La contraseña debe tener al menos 8 caracteres.");
-    if (c1 !== c2) return msg("pErr", "Las contraseñas no coinciden.");
+    if (!App.revisarTodos(camposPrimera)) return;
+    const nombres = App.limpiarTexto($("pNombres").value), apellidos = App.limpiarTexto($("pApellidos").value);
+    const tel = App.soloDigitos($("pTel").value), correo = $("pCorreo").value.trim(), c1 = $("pClave").value;
     ocupado($("pBtn"), true, "Creando…");
     const { data, error } = await sb.auth.signUp({
       email: correo, password: c1,
-      options: { emailRedirectTo: App.url("index.html"), data: { nombre, telefono: tel } }
+      options: { emailRedirectTo: App.url("index.html"), data: { nombres, apellidos, telefono: tel } }
     });
     ocupado($("pBtn"), false, "Crear mi cuenta");
     if (error) return msg("pErr", App.mensajeError(error));
@@ -93,6 +100,7 @@
     setTimeout(() => {
       $("fPrimera").querySelectorAll("input, button").forEach(el => el.disabled = false);
       $("fPrimera").reset();
+      camposPrimera.forEach(i => i._limpiar());
       $("eCorreo").value = correo;
       modo("entrar");
       msg("eOk", "Te mandamos un correo para confirmar tu cuenta. Ábrelo y después entra aquí con tu contraseña.");
@@ -103,7 +111,7 @@
   $("fOlvido").addEventListener("submit", async e => {
     e.preventDefault(); msg("oErr", ""); msg("oOk", "");
     const correo = $("oCorreo").value.trim();
-    if (!App.correoValido(correo)) return msg("oErr", "Escribe tu correo.");
+    if (!$("oCorreo")._revisar()) return $("oCorreo").focus();
     ocupado($("oBtn"), true, "Enviando…");
     const { error } = await sb.auth.resetPasswordForEmail(correo, { redirectTo: App.url("nueva-contrasena.html") });
     ocupado($("oBtn"), false, "Enviar enlace");
@@ -112,16 +120,13 @@
   });
 
   // Completar perfil
-  $("cTel").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^\d ]/g, ""); });
-  $("pTel").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^\d ]/g, ""); });
   $("fPerfil").addEventListener("submit", async e => {
     e.preventDefault(); msg("cErr", "");
-    const nombre = $("cNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("cTel").value);
-    const errNombre = App.validarNombre(nombre);
-    if (errNombre) return msg("cErr", errNombre);
-    if (tel.length !== 10) return msg("cErr", "El teléfono debe tener 10 dígitos.");
+    if (!App.revisarTodos(camposPerfil)) return;
     ocupado($("cBtn"), true, "Guardando…");
-    const { error } = await sb.rpc("actualizar_perfil", { p_nombre: nombre, p_telefono: tel });
+    const { error } = await sb.rpc("actualizar_perfil", {
+      p_nombres: App.limpiarTexto($("cNombres").value), p_apellidos: App.limpiarTexto($("cApellidos").value), p_telefono: App.soloDigitos($("cTel").value)
+    });
     ocupado($("cBtn"), false, "Guardar y continuar");
     if (error) return msg("cErr", App.mensajeError(error));
     arrancar();
@@ -198,11 +203,11 @@
     try { perfil = await App.miPerfil(); } catch (e) {}
     if (!App.perfilCompleto(perfil)) {
       $("cCorreo").textContent = usuario.email;
-      if (perfil) { $("cNombre").value = perfil.nombre || ""; $("cTel").value = perfil.telefono || ""; }
+      if (perfil) { $("cNombres").value = perfil.nombres || ""; $("cApellidos").value = perfil.apellidos || ""; $("cTel").value = App.formatoTel(perfil.telefono); }
       mostrarEscena("escenaPerfil");
       return;
     }
-    $("quien").textContent = perfil.nombre.split(" ")[0];
+    $("quien").textContent = perfil.nombres.split(" ")[0];
     mostrarEscena("escenaInicio");
     cargarEstado();
     clearInterval(refresco); refresco = setInterval(cargarEstado, 30000);

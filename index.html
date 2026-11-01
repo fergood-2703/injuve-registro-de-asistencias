@@ -44,8 +44,11 @@
     <form class="acceso" id="fPrimera" novalidate hidden>
       <h1>Es mi primera vez</h1>
       <p class="sub">Crea tu cuenta. Tu correo debe estar autorizado por un administrador.</p>
-      <label class="campo"><span>Nombre completo</span><input class="entrada" type="text" id="pNombre" autocomplete="name" autocapitalize="words" required></label>
-      <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="pTel" inputmode="numeric" maxlength="14" autocomplete="tel" required></label>
+      <div class="fila2">
+        <label class="campo"><span>Nombre(s)</span><input class="entrada" type="text" id="pNombres" autocomplete="given-name" autocapitalize="words" required></label>
+        <label class="campo"><span>Apellido(s)</span><input class="entrada" type="text" id="pApellidos" autocomplete="family-name" autocapitalize="words" required></label>
+      </div>
+      <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="pTel" placeholder="983 102 36 78" autocomplete="tel" required></label>
       <label class="campo"><span>Correo autorizado</span><input class="entrada" type="email" id="pCorreo" autocomplete="username" required></label>
       <label class="campo"><span>Contraseña nueva <small>mínimo 8 caracteres</small></span><input class="entrada" type="password" id="pClave" autocomplete="new-password" required></label>
       <label class="campo"><span>Repite la contraseña</span><input class="entrada" type="password" id="pClave2" autocomplete="new-password" required></label>
@@ -76,9 +79,12 @@
     <img class="logo-grande" src="img/mascara.png" alt="">
     <form class="acceso" id="fPerfil" novalidate>
       <h1>Completa tu perfil</h1>
-      <p class="sub">Antes de continuar necesitamos tu nombre y teléfono. Así queda registrado quién hace cada movimiento.</p>
-      <label class="campo"><span>Nombre completo</span><input class="entrada" type="text" id="cNombre" autocomplete="name" autocapitalize="words"></label>
-      <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="cTel" inputmode="numeric" maxlength="14" autocomplete="tel"></label>
+      <p class="sub">Antes de continuar necesitamos tu nombre, apellidos y teléfono. Así queda registrado quién hace cada movimiento.</p>
+      <div class="fila2">
+        <label class="campo"><span>Nombre(s)</span><input class="entrada" type="text" id="cNombres" autocomplete="given-name" autocapitalize="words"></label>
+        <label class="campo"><span>Apellido(s)</span><input class="entrada" type="text" id="cApellidos" autocomplete="family-name" autocapitalize="words"></label>
+      </div>
+      <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="cTel" placeholder="983 102 36 78" autocomplete="tel"></label>
       <div class="alerta err" id="cErr" hidden></div>
       <button class="btn verde lg full" type="submit" id="cBtn">Guardar y continuar</button>
       <div class="pie"><span class="tenue" id="cCorreo"></span><button class="link" type="button" id="cSalir">Cerrar sesión</button></div>

@@ -163,9 +163,10 @@
       <div class="cont">
         <form class="apilado" id="fPerfil" novalidate>
           <div class="dos-col">
-            <label class="campo"><span>Nombre completo</span><input class="entrada" type="text" id="pfNombre" autocomplete="name" autocapitalize="words"></label>
-            <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="pfTel" inputmode="numeric" maxlength="14" autocomplete="tel"></label>
+            <label class="campo"><span>Nombre(s)</span><input class="entrada" type="text" id="pfNombres" autocomplete="given-name" autocapitalize="words"></label>
+            <label class="campo"><span>Apellido(s)</span><input class="entrada" type="text" id="pfApellidos" autocomplete="family-name" autocapitalize="words"></label>
           </div>
+          <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="pfTel" placeholder="983 102 36 78" autocomplete="tel"></label>
           <label class="campo"><span>Correo <small>no se puede cambiar</small></span><input class="entrada" type="email" id="pfCorreo" readonly></label>
           <div class="alerta" id="pfMsg" hidden></div>
           <div><button class="btn verde sm" type="submit" id="pfBtn">Guardar cambios</button></div>

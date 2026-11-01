@@ -158,7 +158,7 @@
     if (!regs.length) { tb.innerHTML = '<tr><td colspan="9" class="vacio">Aún no hay registros en esta actividad.</td></tr>'; return; }
     regs.forEach((r, i) => {
       const tr = document.createElement("tr");
-      [i + 1, r.nombre + (r.tutor ? " (tutor: " + r.tutor + ")" : ""), r.edad, r.genero, r.telefono || "—", r.correo || "—", App.hora(r.registrado)]
+      [i + 1, r.nombre + (r.tutor ? " (tutor: " + r.tutor + ")" : ""), r.edad, r.genero, r.telefono ? formatoTel(r.telefono) : "—", r.correo || "—", App.hora(r.registrado)]
         .forEach((v, j) => { const td = document.createElement("td"); td.textContent = v; if (j === 0) td.className = "n"; tr.append(td); });
       const tf = document.createElement("td");
       if (r.firma) { const im = document.createElement("img"); im.src = r.firma; im.alt = "Firma de " + r.nombre; tf.append(im); }
@@ -314,25 +314,29 @@
   });
 
   // Mi perfil
-  function formatoTel(t) { const d = App.soloDigitos(t); return d.length === 10 ? d.slice(0, 3) + " " + d.slice(3, 6) + " " + d.slice(6) : d; }
+  const formatoTel = App.formatoTel;
+  const R = App.reglas;
+  const camposPerfil = [App.vigilar($("pfNombres"), R.nombres), App.vigilar($("pfApellidos"), R.apellidos), App.vigilar($("pfTel"), R.telefono)];
+  App.mascaraTel($("pfTel"));
+  App.vigilar($("c1"), R.clave);
+  App.vigilar($("c2"), v => v === $("c1").value ? "" : "Las contraseñas no coinciden.");
   function pintarEncabezado() { $("sesionTxt").textContent = "Conectado como " + perfil.nombre + " (" + yo.email + ")."; }
   function pintarPerfil() {
-    $("pfNombre").value = perfil.nombre || ""; $("pfTel").value = formatoTel(perfil.telefono); $("pfCorreo").value = yo.email;
+    $("pfNombres").value = perfil.nombres || ""; $("pfApellidos").value = perfil.apellidos || "";
+    $("pfTel").value = formatoTel(perfil.telefono); $("pfCorreo").value = yo.email;
+    camposPerfil.forEach(i => i._limpiar());
     msg("pfMsg", "");
   }
-  $("pfTel").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^\d ]/g, ""); });
   $("fPerfil").addEventListener("submit", async e => {
     e.preventDefault();
-    const nombre = $("pfNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("pfTel").value);
-    const errNombre = App.validarNombre(nombre);
-    if (errNombre) return msg("pfMsg", errNombre, "err");
-    if (tel.length !== 10) return msg("pfMsg", "El teléfono debe tener 10 dígitos.", "err");
-    if (nombre === perfil.nombre && tel === perfil.telefono) return msg("pfMsg", "No hay cambios por guardar.", "warn");
+    if (!App.revisarTodos(camposPerfil)) return msg("pfMsg", "");
+    const nombres = App.limpiarTexto($("pfNombres").value), apellidos = App.limpiarTexto($("pfApellidos").value), tel = App.soloDigitos($("pfTel").value);
+    if (nombres === perfil.nombres && apellidos === perfil.apellidos && tel === perfil.telefono) return msg("pfMsg", "No hay cambios por guardar.", "warn");
     $("pfBtn").disabled = true;
-    const { error } = await sb.rpc("actualizar_perfil", { p_nombre: nombre, p_telefono: tel });
+    const { error } = await sb.rpc("actualizar_perfil", { p_nombres: nombres, p_apellidos: apellidos, p_telefono: tel });
     $("pfBtn").disabled = false;
     if (error) return msg("pfMsg", App.mensajeError(error), "err");
-    perfil.nombre = nombre; perfil.telefono = tel;
+    Object.assign(perfil, { nombres, apellidos, nombre: nombres + " " + apellidos, telefono: tel });
     pintarEncabezado();
     msg("pfMsg", "Datos guardados.", "ok");
   });
@@ -340,13 +344,12 @@
   $("fClave").addEventListener("submit", async e => {
     e.preventDefault();
     const c1 = $("c1").value, c2 = $("c2").value;
-    if (c1.length < 8) return msg("cMsg", "La contraseña debe tener al menos 8 caracteres.", "err");
-    if (c1 !== c2) return msg("cMsg", "Las contraseñas no coinciden.", "err");
+    if (!App.revisarTodos([$("c1"), $("c2")])) return;
     $("cBtn").disabled = true;
     const { error } = await sb.auth.updateUser({ password: c1 });
     $("cBtn").disabled = false;
     if (error) return msg("cMsg", App.mensajeError(error), "err");
-    $("c1").value = $("c2").value = "";
+    $("c1").value = $("c2").value = ""; $("c1")._limpiar(); $("c2")._limpiar();
     App.registrar("contrasena_cambiada");
     msg("cMsg", "Contraseña cambiada.", "ok");
   });
