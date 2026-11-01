@@ -67,7 +67,7 @@
     soloDigitos: t => String(t || "").replace(/\D/g, ""),
     limpiarTexto: t => String(t || "").trim().replace(/\s+/g, " "),
 
-    // Teléfono con espacios: 983 102 36 78
+    // Teléfono con espacios: 984 000 00 00
     formatoTel(t) {
       const d = String(t || "").replace(/\D/g, "").slice(0, 10);
       return [d.slice(0, 3), d.slice(3, 6), d.slice(6, 8), d.slice(8, 10)].filter(Boolean).join(" ");
