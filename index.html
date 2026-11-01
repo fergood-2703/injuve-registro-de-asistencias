@@ -42,13 +42,15 @@
     <!-- Primera vez -->
     <form class="acceso" id="fPrimera" novalidate hidden>
       <h1>Es mi primera vez</h1>
-      <p class="sub">Crea tu contraseña. Tu correo debe estar autorizado por un administrador.</p>
+      <p class="sub">Crea tu cuenta. Tu correo debe estar autorizado por un administrador.</p>
+      <label class="campo"><span>Nombre completo</span><input class="entrada" type="text" id="pNombre" autocomplete="name" autocapitalize="words" required></label>
+      <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="pTel" inputmode="numeric" maxlength="14" autocomplete="tel" required></label>
       <label class="campo"><span>Correo autorizado</span><input class="entrada" type="email" id="pCorreo" autocomplete="username" required></label>
       <label class="campo"><span>Contraseña nueva <small>mínimo 8 caracteres</small></span><input class="entrada" type="password" id="pClave" autocomplete="new-password" required></label>
       <label class="campo"><span>Repite la contraseña</span><input class="entrada" type="password" id="pClave2" autocomplete="new-password" required></label>
       <div class="alerta err" id="pErr" hidden></div>
       <div class="alerta ok" id="pOk" hidden></div>
-      <button class="btn verde lg full" type="submit" id="pBtn">Crear mi contraseña</button>
+      <button class="btn verde lg full" type="submit" id="pBtn">Crear mi cuenta</button>
       <div class="pie"><button class="link" type="button" data-modo="entrar">← Ya tengo contraseña</button></div>
     </form>
 
@@ -64,6 +66,24 @@
     </form>
   </div>
   <div class="abajo anim"><img src="img/gobierno.png" alt="H. Ayuntamiento y Gobierno de Playa del Carmen"></div>
+</main>
+
+<!-- Completar perfil (cuentas sin nombre o teléfono) -->
+<main class="escena" id="escenaPerfil" hidden>
+  <div class="arriba"><img src="img/injuve-texto.png" alt="Instituto de la Juventud · Gobierno de Playa del Carmen"></div>
+  <div class="acceso-medio">
+    <img class="logo-grande" src="img/mascara.png" alt="">
+    <form class="acceso" id="fPerfil" novalidate>
+      <h1>Completa tu perfil</h1>
+      <p class="sub">Antes de continuar necesitamos tu nombre y teléfono. Así queda registrado quién hace cada movimiento.</p>
+      <label class="campo"><span>Nombre completo</span><input class="entrada" type="text" id="cNombre" autocomplete="name" autocapitalize="words"></label>
+      <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="cTel" inputmode="numeric" maxlength="14" autocomplete="tel"></label>
+      <div class="alerta err" id="cErr" hidden></div>
+      <button class="btn verde lg full" type="submit" id="cBtn">Guardar y continuar</button>
+      <div class="pie"><span class="tenue" id="cCorreo"></span><button class="link" type="button" id="cSalir">Cerrar sesión</button></div>
+    </form>
+  </div>
+  <div></div>
 </main>
 
 <!-- Menú del personal -->
@@ -95,7 +115,7 @@
 
   <div class="abajo anim">
     <img src="img/gobierno.png" alt="H. Ayuntamiento y Gobierno de Playa del Carmen">
-    <div class="quien"><span>Hola, <b id="quien"></b></span><button class="link" type="button" id="salir">Cerrar sesión</button></div>
+    <div class="quien"><span>Hola, <a class="link" href="panel.html#perfil" id="quien" title="Mi perfil"></a></span><button class="link" type="button" id="salir">Cerrar sesión</button></div>
   </div>
 </main>
 

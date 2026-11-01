@@ -1,8 +1,31 @@
-// Panel del personal: actividades, lista, QR, Excel y configuración
+// Panel del personal: actividades, historial, configuración y perfil
 (function () {
   const { $, sb } = App;
-  let yo = null, acts = [], sel = null, regs = [], config = {};
+  let yo = null, perfil = null, acts = [], sel = null, regs = [], config = {};
   let borradoModo = "nunca";
+
+  // Texto de cada movimiento del historial y su grupo (para filtros y colores)
+  const ACCIONES = {
+    inicio_sesion:       ["sesiones",    h => "inició sesión"],
+    actividad_creada:    ["actividades", h => "creó la actividad " + act(h)],
+    registro_abierto:    ["actividades", h => "abrió el registro de " + act(h)],
+    registro_cerrado:    ["actividades", h => "cerró el registro de " + act(h)],
+    actividad_eliminada: ["actividades", h => "eliminó la actividad " + act(h)],
+    datos_limpiados:     ["actividades", h => "limpió los datos personales de " + act(h) + (h.detalle ? " (" + h.detalle + ")" : "")],
+    registro_eliminado:  ["registros",   h => "eliminó el registro de " + fuerte(h.detalle) + " en " + act(h)],
+    excel_descargado:    ["excel",       h => "descargó el Excel de " + act(h)],
+    cuenta_creada:       ["cuentas",      h => "creó su cuenta"],
+    perfil_actualizado:  ["cuentas",      h => "actualizó su perfil"],
+    contrasena_cambiada: ["cuentas",      h => "cambió su contraseña"],
+    admin_autorizado:    ["cuentas",      h => "autorizó a " + fuerte(h.detalle)],
+    admin_quitado:       ["cuentas",      h => "quitó a " + fuerte(h.detalle)],
+    aviso_actualizado:   ["config",      h => "actualizó el aviso de privacidad"],
+    borrado_cambiado:    ["config",      h => "cambió el borrado automático a " + fuerte(h.detalle)]
+  };
+  const GRUPOS = {};
+  Object.keys(ACCIONES).forEach(k => { const g = ACCIONES[k][0]; (GRUPOS[g] = GRUPOS[g] || []).push(k); });
+  const fuerte = t => "<b>" + escapar(t || "") + "</b>";
+  const act = h => "«" + escapar(h.actividad_nombre || "actividad") + "»";
 
   // Utilidades
   function msg(id, txt, tipo) { const e = $(id); e.textContent = txt || ""; e.hidden = !txt; if (tipo) e.className = "alerta " + tipo; }
@@ -20,11 +43,14 @@
   // Pestañas
   function ruta() {
     const h = location.hash.replace("#", "");
-    const cfg = h === "configuracion";
-    $("vAct").hidden = cfg; $("vCfg").hidden = !cfg;
-    $("tabAct").setAttribute("aria-current", cfg ? "false" : "page");
-    $("tabCfg").setAttribute("aria-current", cfg ? "page" : "false");
-    if (cfg) cargarConfiguracion();
+    const vista = { configuracion: "vCfg", historial: "vHist", perfil: "vPerfil" }[h] || "vAct";
+    ["vAct", "vHist", "vCfg", "vPerfil"].forEach(v => $(v).hidden = v !== vista);
+    $("tabAct").setAttribute("aria-current", vista === "vAct" ? "page" : "false");
+    $("tabHist").setAttribute("aria-current", vista === "vHist" ? "page" : "false");
+    $("tabCfg").setAttribute("aria-current", vista === "vCfg" ? "page" : "false");
+    if (vista === "vCfg") cargarConfiguracion();
+    if (vista === "vHist") iniciarHistorial();
+    if (vista === "vPerfil") pintarPerfil();
     if (h === "crear") setTimeout(() => { $("nNombre").focus(); $("nNombre").scrollIntoView({ block: "center" }); }, 200);
   }
   window.addEventListener("hashchange", ruta);
@@ -49,7 +75,12 @@
       const nm = document.createElement("button"); nm.type = "button"; nm.className = "nm";
       const b = document.createElement("b"); b.textContent = a.nombre;
       const s = document.createElement("span"); s.textContent = App.fecha(a.fecha, true);
-      nm.append(b, s); nm.onclick = () => { sel = a.id; pintarLista(); cargarRegs(); };
+      nm.append(b, s);
+      if (a.creada_por_nombre || a.creada_por) {
+        const por = document.createElement("span"); por.className = "por";
+        por.textContent = "Creada por " + (a.creada_por_nombre || a.creada_por);
+        nm.append(por);
+      } nm.onclick = () => { sel = a.id; pintarLista(); cargarRegs(); };
       const pill = document.createElement("span");
       pill.className = "pill " + (a.limpiada ? "limpia" : a.abierta ? "abierta" : "cerrada");
       pill.textContent = a.limpiada ? "Datos limpiados" : a.abierta ? "Abierta" : "Cerrada";
@@ -104,6 +135,7 @@
     $("detalle").hidden = !a; if (!a) return;
     $("dTitulo").textContent = a.nombre;
     $("dQr").hidden = a.limpiada; $("dExcel").hidden = a.limpiada;
+    cargarHistorialActividad(a.id);
     if (a.limpiada) {
       $("dTabla").hidden = true; $("dEstad").hidden = false;
       $("dSub").textContent = App.fecha(a.fecha, true) + " · " + (a.total || 0) + " asistentes";
@@ -147,7 +179,9 @@
     try {
       if (!config.aviso) { const { data } = await sb.from("config").select("*").eq("id", 1).single(); config = data || {}; }
       await ExcelAsistencia.generar(a, regs, config.aviso);
+      await App.registrar("excel_descargado", a.id);
       App.toast("Excel descargado.");
+      cargarHistorialActividad(a.id);
     } catch (e) { App.toast("No se pudo generar el Excel. Revisa la conexión e inténtalo otra vez."); }
     b.disabled = false; b.textContent = "Descargar Excel";
   });
@@ -171,7 +205,7 @@
   $("qrDescargar").addEventListener("click", () => {
     $("qrLienzo").toBlob(b => {
       const u = URL.createObjectURL(b), a = document.createElement("a");
-      a.href = u; a.download = ("QR " + qrActual.nombre).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w-]+/g, "_") + ".png";
+      a.href = u; a.download = ("QR " + qrActual.nombre).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]+/g, "_") + ".png";
       document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000);
     }, "image/png");
   });
@@ -200,18 +234,22 @@
     data.forEach((p, i) => {
       const esYo = p.email.toLowerCase() === yo.email.toLowerCase();
       const row = document.createElement("div"); row.className = "adm";
-      const av = document.createElement("span"); av.className = "av"; av.style.background = COLORES[i % COLORES.length]; av.textContent = p.email[0].toUpperCase();
+      const av = document.createElement("span"); av.className = "av"; av.style.background = COLORES[i % COLORES.length];
+      av.textContent = (p.nombre || p.email)[0].toUpperCase();
       const info = document.createElement("div"); info.className = "info";
-      const b = document.createElement("b"); b.textContent = p.email;
-      const s = document.createElement("small"); s.textContent = p.tiene_cuenta ? "Ya tiene contraseña" : "Autorizado · aún no crea su contraseña";
-      info.append(b, s);
+      const b = document.createElement("b"); b.textContent = p.nombre || "Sin nombre todavía";
+      const s = document.createElement("small");
+      s.textContent = [p.email, p.telefono ? formatoTel(p.telefono) : null].filter(Boolean).join(" · ");
+      const s2 = document.createElement("small");
+      s2.textContent = (p.tiene_cuenta ? "Cuenta creada" : "Aún no crea su cuenta") + (p.autorizado_por ? " · autorizado por " + p.autorizado_por : "");
+      info.append(b, s, s2);
       const pill = document.createElement("span"); pill.className = "pill " + (esYo ? "yo" : p.tiene_cuenta ? "ok" : "pend");
       pill.textContent = esYo ? "Tú" : p.tiene_cuenta ? "Activo" : "Pendiente";
       row.append(av, info, pill);
       if (!esYo && total > 1) {
         const q = document.createElement("button"); q.type = "button"; q.className = "btn sm suave"; q.textContent = "Quitar";
         q.onclick = async () => {
-          if (!await confirmar("¿Quitar a " + p.email + "?", "Ya no podrá entrar al inicio ni al panel. Si después lo vuelves a autorizar, tendrá que crear una contraseña nueva.", "Sí, quitar")) return;
+          if (!await confirmar("¿Quitar a " + (p.nombre || p.email) + "?", "Ya no podrá entrar al inicio ni al panel. Si después lo vuelves a autorizar, tendrá que crear una contraseña nueva.", "Sí, quitar")) return;
           const { error } = await sb.rpc("quitar_personal", { correo: p.email });
           if (error) return App.toast(App.mensajeError(error));
           App.toast("Administrador quitado."); cargarAdmins();
@@ -274,7 +312,29 @@
     App.toast(borradoModo === "nunca" ? "Guardado: los registros se conservan siempre." : "Guardado: borrado automático " + (borradoModo === "semana" ? "cada semana." : "cada mes."));
   });
 
-  // Mi cuenta
+  // Mi perfil
+  function formatoTel(t) { const d = App.soloDigitos(t); return d.length === 10 ? d.slice(0, 3) + " " + d.slice(3, 6) + " " + d.slice(6) : d; }
+  function pintarEncabezado() { $("quien").textContent = perfil.nombre; }
+  function pintarPerfil() {
+    $("pfNombre").value = perfil.nombre || ""; $("pfTel").value = formatoTel(perfil.telefono); $("pfCorreo").value = yo.email;
+    msg("pfMsg", "");
+  }
+  $("pfTel").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^\d ]/g, ""); });
+  $("fPerfil").addEventListener("submit", async e => {
+    e.preventDefault();
+    const nombre = $("pfNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("pfTel").value);
+    if (nombre.length < 3) return msg("pfMsg", "Escribe tu nombre completo.", "err");
+    if (tel.length !== 10) return msg("pfMsg", "El teléfono debe tener 10 dígitos.", "err");
+    if (nombre === perfil.nombre && tel === perfil.telefono) return msg("pfMsg", "No hay cambios por guardar.", "warn");
+    $("pfBtn").disabled = true;
+    const { error } = await sb.rpc("actualizar_perfil", { p_nombre: nombre, p_telefono: tel });
+    $("pfBtn").disabled = false;
+    if (error) return msg("pfMsg", App.mensajeError(error), "err");
+    perfil.nombre = nombre; perfil.telefono = tel;
+    pintarEncabezado();
+    msg("pfMsg", "Datos guardados.", "ok");
+  });
+
   $("fClave").addEventListener("submit", async e => {
     e.preventDefault();
     const c1 = $("c1").value, c2 = $("c2").value;
@@ -285,8 +345,76 @@
     $("cBtn").disabled = false;
     if (error) return msg("cMsg", App.mensajeError(error), "err");
     $("c1").value = $("c2").value = "";
+    App.registrar("contrasena_cambiada");
     msg("cMsg", "Contraseña cambiada.", "ok");
   });
+
+  // Historial
+  const POR_PAGINA = 40;
+  let histPagina = 0, histListo = false;
+
+  function filaMovimiento(h, conActividad) {
+    const def = ACCIONES[h.accion] || ["config", () => h.accion];
+    const li = document.createElement("li"); li.className = "mov " + def[0];
+    const p = document.createElement("span"); p.className = "pto";
+    const t = document.createElement("div"); t.className = "txt";
+    t.innerHTML = fuerte(h.actor_nombre) + " " + def[1](h);
+    if (h.actor_email && h.actor_email !== h.actor_nombre) {
+      const sm = document.createElement("small"); sm.textContent = h.actor_email; t.append(sm);
+    }
+    const opciones = conActividad ? { day: "numeric", month: "short" } : { day: "numeric", month: "short", year: "numeric" };
+    const tm = document.createElement("time"); tm.dateTime = h.fecha;
+    tm.textContent = new Date(h.fecha).toLocaleDateString("es-MX", opciones) + " · " + App.hora(h.fecha);
+    li.append(p, t, tm);
+    return li;
+  }
+
+  async function cargarHistorialActividad(id) {
+    const el = $("dHist");
+    const { data, error } = await sb.from("historial").select("*").eq("actividad_id", id).order("fecha", { ascending: true }).order("id", { ascending: true });
+    el.innerHTML = "";
+    if (error) { el.innerHTML = '<li class="vacio">No se pudo cargar el historial.</li>'; return; }
+    if (!data.length) { el.innerHTML = '<li class="vacio">Sin movimientos todavía.</li>'; return; }
+    data.forEach(h => el.append(filaMovimiento(h, true)));
+  }
+
+  async function iniciarHistorial() {
+    if (!histListo) {
+      histListo = true;
+      const { data } = await sb.rpc("lista_personal");
+      const sp = $("hPersona");
+      (data || []).forEach(p => { const o = document.createElement("option"); o.value = p.email; o.textContent = p.nombre || p.email; sp.append(o); });
+      const os = document.createElement("option"); os.value = "__sistema"; os.textContent = "Sistema"; sp.append(os);
+      ["hPersona", "hTipo", "hActividad", "hDesde", "hHasta"].forEach(id => $(id).addEventListener("change", () => cargarHistorial(true)));
+    }
+    const sa = $("hActividad"), actual = sa.value;
+    sa.innerHTML = '<option value="">Todas</option>';
+    acts.forEach(a => { const o = document.createElement("option"); o.value = a.id; o.textContent = a.nombre + " · " + App.fecha(a.fecha); sa.append(o); });
+    sa.value = actual;
+    cargarHistorial(true);
+  }
+
+  async function cargarHistorial(reiniciar) {
+    if (reiniciar) { histPagina = 0; $("hLista").innerHTML = '<li class="vacio">Cargando…</li>'; }
+    let q = sb.from("historial").select("*").order("fecha", { ascending: false }).order("id", { ascending: false });
+    const persona = $("hPersona").value, tipo = $("hTipo").value, actId = $("hActividad").value;
+    if (persona === "__sistema") q = q.is("actor_email", null);
+    else if (persona) q = q.eq("actor_email", persona);
+    if (tipo) q = q.in("accion", GRUPOS[tipo]);
+    if (actId) q = q.eq("actividad_id", actId);
+    if ($("hDesde").value) q = q.gte("fecha", new Date($("hDesde").value + "T00:00:00").toISOString());
+    if ($("hHasta").value) q = q.lt("fecha", new Date(App.sumarDias($("hHasta").value, 1) + "T00:00:00").toISOString());
+    const desde = histPagina * POR_PAGINA;
+    const { data, error } = await q.range(desde, desde + POR_PAGINA);
+    const el = $("hLista");
+    if (reiniciar) el.innerHTML = "";
+    if (error) { el.innerHTML = '<li class="vacio">No se pudo cargar el historial.</li>'; return; }
+    if (reiniciar && !data.length) el.innerHTML = '<li class="vacio">No hay movimientos con estos filtros.</li>';
+    data.slice(0, POR_PAGINA).forEach(h => el.append(filaMovimiento(h, false)));
+    $("hMas").hidden = data.length <= POR_PAGINA;
+  }
+  $("hMas").addEventListener("click", () => { histPagina++; cargarHistorial(false); });
+  $("hLimpiar").addEventListener("click", () => { $("fFiltros").reset(); cargarHistorial(true); });
 
   $("salir").addEventListener("click", async () => { await sb.auth.signOut(); location.href = "index.html"; });
 
@@ -295,10 +423,12 @@
     if (!App.configurado) { document.body.innerHTML = '<p style="padding:40px;text-align:center">Falta configurar la conexión con la base de datos en js/config.js.</p>'; return; }
     try { yo = await App.personalActual(); } catch (e) { yo = null; }
     if (!yo) { location.replace("index.html"); return; }
+    try { perfil = await App.miPerfil(); } catch (e) { perfil = null; }
+    if (!App.perfilCompleto(perfil)) { location.replace("index.html"); return; }
     $("app").hidden = false;
-    $("quien").textContent = yo.email; $("miCorreo").textContent = yo.email;
+    pintarEncabezado();
     $("nFecha").value = App.hoy();
-    ruta();
     await cargarActs();
+    ruta();
   })();
 })();

@@ -88,7 +88,7 @@ td img{height:40px;display:block;background:#fff;border-radius:4px}
 .antes-despues h3{margin:0 0 8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris)}
 .antes-despues .fl{display:grid;place-items:center;font-size:28px;color:var(--rojo)}
 .tachado{color:#B9AE9C;text-decoration:line-through}
-.tenue{color:var(--gris)}
+
 .apilado{display:flex;flex-direction:column;gap:14px}
 .proxima{border:2px dashed var(--naranja);border-radius:14px;padding:12px 16px;font-size:14px;display:flex;flex-direction:column;gap:8px}
 .proxima ul{margin:0;padding-left:18px}
@@ -100,3 +100,28 @@ td img{height:40px;display:block;background:#fff;border-radius:4px}
   .antes-despues{grid-template-columns:1fr}.antes-despues .fl{transform:rotate(90deg)}
   .barra-sup .marca img.t{display:none}
 }
+
+/* Historial */
+.filtros{display:grid;grid-template-columns:repeat(5,1fr) auto;gap:10px;align-items:end}
+.filtros .entrada{font-size:15px;padding:10px 12px}
+.filtros .btn{height:46px}
+.movs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.mov{display:grid;grid-template-columns:14px 1fr auto;gap:12px;align-items:start;padding:12px 4px;border-bottom:1px solid var(--linea)}
+.mov:last-child{border-bottom:0}
+.mov .pto{width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--gris)}
+.mov.actividades .pto{background:var(--naranja)}
+.mov.registros .pto{background:var(--rojo)}
+.mov.excel .pto{background:var(--verde)}
+.mov.cuentas .pto{background:var(--tinta)}
+.mov.config .pto{background:var(--naranja-osc)}
+.mov.sesiones .pto{background:#B9AE9C}
+.mov .txt{min-width:0;overflow-wrap:anywhere}
+.mov .txt b{font-weight:700}
+.mov .txt small{display:block;color:var(--gris)}
+.mov time{font-size:13px;color:var(--gris);white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
+.hist-act{border-top:1px solid var(--linea);padding-top:16px;display:flex;flex-direction:column;gap:6px}
+.hist-act h3{margin:0;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--gris)}
+.act .nm span.por{display:block;font-size:13px}
+@media (max-width:900px){.filtros{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.filtros{grid-template-columns:1fr}.mov{grid-template-columns:14px 1fr}.mov time{grid-column:2;text-align:left}}
+.adm .info small{display:block}

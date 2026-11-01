@@ -24,7 +24,7 @@
 
   // Escenas con animación de entrada
   function mostrarEscena(id) {
-    ["escenaAcceso", "escenaInicio", "escenaError"].forEach(x => { $(x).hidden = x !== id; $(x).classList.remove("entrar"); });
+    ["escenaAcceso", "escenaPerfil", "escenaInicio", "escenaError"].forEach(x => { $(x).hidden = x !== id; $(x).classList.remove("entrar"); });
     const esc = $(id);
     void esc.offsetWidth;
     esc.classList.add("entrar");
@@ -61,18 +61,25 @@
     ocupado($("eBtn"), false, "Entrar");
     if (error) return msg("eErr", App.mensajeError(error));
     $("eClave").value = "";
+    App.registrar("inicio_sesion");
     arrancar();
   });
 
   $("fPrimera").addEventListener("submit", async e => {
     e.preventDefault(); msg("pErr", ""); msg("pOk", "");
+    const nombre = $("pNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("pTel").value);
     const correo = $("pCorreo").value.trim(), c1 = $("pClave").value, c2 = $("pClave2").value;
+    if (nombre.length < 3) return msg("pErr", "Escribe tu nombre completo.");
+    if (tel.length !== 10) return msg("pErr", "El teléfono debe tener 10 dígitos.");
     if (!App.correoValido(correo)) return msg("pErr", "Escribe tu correo autorizado.");
     if (c1.length < 8) return msg("pErr", "La contraseña debe tener al menos 8 caracteres.");
     if (c1 !== c2) return msg("pErr", "Las contraseñas no coinciden.");
     ocupado($("pBtn"), true, "Creando…");
-    const { data, error } = await sb.auth.signUp({ email: correo, password: c1, options: { emailRedirectTo: App.url("index.html") } });
-    ocupado($("pBtn"), false, "Crear mi contraseña");
+    const { data, error } = await sb.auth.signUp({
+      email: correo, password: c1,
+      options: { emailRedirectTo: App.url("index.html"), data: { nombre, telefono: tel } }
+    });
+    ocupado($("pBtn"), false, "Crear mi cuenta");
     if (error) return msg("pErr", App.mensajeError(error));
     // Supabase no da error si el correo ya existía: en ese caso "identities" viene vacío
     if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
@@ -92,6 +99,22 @@
     if (error) return msg("oErr", App.mensajeError(error));
     msg("oOk", "Si el correo está registrado, en unos minutos te llegará el enlace. Revisa también la carpeta de spam.");
   });
+
+  // Completar perfil
+  $("cTel").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^\d ]/g, ""); });
+  $("pTel").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^\d ]/g, ""); });
+  $("fPerfil").addEventListener("submit", async e => {
+    e.preventDefault(); msg("cErr", "");
+    const nombre = $("cNombre").value.trim().replace(/\s+/g, " "), tel = App.soloDigitos($("cTel").value);
+    if (nombre.length < 3) return msg("cErr", "Escribe tu nombre completo.");
+    if (tel.length !== 10) return msg("cErr", "El teléfono debe tener 10 dígitos.");
+    ocupado($("cBtn"), true, "Guardando…");
+    const { error } = await sb.rpc("actualizar_perfil", { p_nombre: nombre, p_telefono: tel });
+    ocupado($("cBtn"), false, "Guardar y continuar");
+    if (error) return msg("cErr", App.mensajeError(error));
+    arrancar();
+  });
+  $("cSalir").addEventListener("click", async () => { await sb.auth.signOut(); mostrarEscena("escenaAcceso"); modo("entrar"); });
 
   // Menú
   async function cargarEstado() {
@@ -160,7 +183,15 @@
       if (teniaSesion) msg("eErr", "Tu cuenta ya no está autorizada. Pide a un administrador que agregue tu correo en Configuración.");
       return;
     }
-    $("quien").textContent = usuario.email.split("@")[0];
+    let perfil = null;
+    try { perfil = await App.miPerfil(); } catch (e) {}
+    if (!App.perfilCompleto(perfil)) {
+      $("cCorreo").textContent = usuario.email;
+      if (perfil) { $("cNombre").value = perfil.nombre || ""; $("cTel").value = perfil.telefono || ""; }
+      mostrarEscena("escenaPerfil");
+      return;
+    }
+    $("quien").textContent = perfil.nombre.split(" ")[0];
     mostrarEscena("escenaInicio");
     cargarEstado();
     clearInterval(refresco); refresco = setInterval(cargarEstado, 30000);

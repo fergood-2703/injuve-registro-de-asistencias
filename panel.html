@@ -21,9 +21,10 @@
     <a class="marca" href="index.html" title="Ir al inicio"><img class="m" src="img/mascara.png" alt=""><img class="t" src="img/injuve-texto.png" alt="Instituto de la Juventud"></a>
     <nav class="pestanas">
       <a href="#actividades" id="tabAct">Actividades</a>
+      <a href="#historial" id="tabHist">Historial</a>
       <a href="#configuracion" id="tabCfg">Configuración</a>
     </nav>
-    <div class="usuario"><span id="quien"></span><a href="index.html">Inicio</a><button class="link" type="button" id="salir">Cerrar sesión</button></div>
+    <div class="usuario"><a class="link" href="#perfil" id="quien" title="Mi perfil"></a><a href="index.html">Inicio</a><button class="link" type="button" id="salir">Cerrar sesión</button></div>
   </header>
 
   <!-- Actividades -->
@@ -64,6 +65,10 @@
           <tbody id="dFilas"></tbody>
         </table></div>
         <div class="estad" id="dEstad" hidden></div>
+        <div class="hist-act">
+          <h3>Historial de esta actividad</h3>
+          <ol class="movs" id="dHist"></ol>
+        </div>
       </div>
     </div>
   </section>
@@ -78,7 +83,7 @@
         <div class="pasos">
           <div class="paso"><span class="n">1</span><b>Autoriza su correo</b>Escríbelo aquí abajo.</div>
           <div class="paso"><span class="n">2</span><b>Avísale</b>Que entre a la página y toque «Es mi primera vez».</div>
-          <div class="paso"><span class="n">3</span><b>Crea su contraseña</b>Solo funciona con un correo autorizado aquí.</div>
+          <div class="paso"><span class="n">3</span><b>Crea su cuenta</b>Con su nombre, teléfono y contraseña. Solo funciona con un correo autorizado aquí.</div>
         </div>
         <div class="admins" id="admins"><div class="vacio">Cargando…</div></div>
         <form class="agregar" id="fAdmin" novalidate>
@@ -86,7 +91,7 @@
           <button class="btn verde" type="submit" id="aBtn">Autorizar correo</button>
         </form>
         <div class="alerta" id="aMsg" hidden></div>
-        <p class="regla">🔒 Nadie puede quitarse a sí mismo y nunca se puede quitar al último administrador. Si alguien olvida su contraseña y no le llega el correo de recuperación, quítalo y vuélvelo a autorizar: así crea una nueva con «Es mi primera vez».</p>
+        <p class="regla">🔒 Nadie puede quitarse a sí mismo y nunca se puede quitar al último administrador. Si alguien olvida su contraseña y no le llega el correo de recuperación, quítalo y vuélvelo a autorizar: así crea una cuenta nueva con «Es mi primera vez». El correo de una cuenta no se puede cambiar.</p>
       </div>
     </div>
 
@@ -119,8 +124,55 @@
       </div>
     </div>
 
+  </section>
+
+  <!-- Historial -->
+  <section class="vista" id="vHist" hidden>
+    <h1 class="titulo">Historial</h1>
     <div class="sec">
-      <div class="cab"><span class="num tinta">4</span><div><h2>Mi cuenta</h2><p class="sub" id="miCorreo"></p></div></div>
+      <div class="cab"><span class="num verde">⌕</span><div><h2>Movimientos</h2><p class="sub">Todo lo que se hace en el sistema. Nadie puede editarlo ni borrarlo.</p></div></div>
+      <div class="cont">
+        <form class="filtros" id="fFiltros" novalidate>
+          <label class="campo"><span>Persona</span><select class="entrada" id="hPersona"><option value="">Todas</option></select></label>
+          <label class="campo"><span>Tipo</span><select class="entrada" id="hTipo">
+            <option value="">Todos</option>
+            <option value="sesiones">Inicios de sesión</option>
+            <option value="actividades">Actividades</option>
+            <option value="registros">Registros eliminados</option>
+            <option value="excel">Descargas de Excel</option>
+            <option value="cuentas">Administradores y perfiles</option>
+            <option value="config">Configuración</option>
+          </select></label>
+          <label class="campo"><span>Actividad</span><select class="entrada" id="hActividad"><option value="">Todas</option></select></label>
+          <label class="campo"><span>Desde</span><input class="entrada" type="date" id="hDesde"></label>
+          <label class="campo"><span>Hasta</span><input class="entrada" type="date" id="hHasta"></label>
+          <button class="btn suave" type="button" id="hLimpiar">Quitar filtros</button>
+        </form>
+        <ol class="movs" id="hLista"><li class="vacio">Cargando…</li></ol>
+        <div><button class="btn suave" type="button" id="hMas" hidden>Ver más</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mi perfil -->
+  <section class="vista" id="vPerfil" hidden>
+    <h1 class="titulo">Mi perfil</h1>
+    <div class="sec">
+      <div class="cab"><span class="num naranja">☺</span><div><h2>Mis datos</h2><p class="sub">Tu nombre aparece en el historial y en las actividades que crees.</p></div></div>
+      <div class="cont">
+        <form class="apilado" id="fPerfil" novalidate>
+          <div class="dos-col">
+            <label class="campo"><span>Nombre completo</span><input class="entrada" type="text" id="pfNombre" autocomplete="name" autocapitalize="words"></label>
+            <label class="campo"><span>Teléfono <small>10 dígitos</small></span><input class="entrada" type="tel" id="pfTel" inputmode="numeric" maxlength="14" autocomplete="tel"></label>
+          </div>
+          <label class="campo"><span>Correo <small>no se puede cambiar</small></span><input class="entrada" type="email" id="pfCorreo" readonly></label>
+          <div class="alerta" id="pfMsg" hidden></div>
+          <div><button class="btn verde sm" type="submit" id="pfBtn">Guardar cambios</button></div>
+        </form>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="cab"><span class="num tinta">●</span><div><h2>Contraseña</h2><p class="sub">Cámbiala cuando quieras. Necesitarás la nueva para entrar y para salir del registro en la tableta.</p></div></div>
       <div class="cont">
         <form class="apilado" id="fClave" novalidate>
           <div class="dos-col">

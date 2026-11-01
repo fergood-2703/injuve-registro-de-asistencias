@@ -8,7 +8,8 @@ Aplicación web para registrar la asistencia a las actividades del Instituto de 
 - **QR por actividad**: solo acepta registros mientras la actividad está abierta.
 - **Panel del personal**: crear, abrir y cerrar actividades; ver la lista; eliminar duplicados.
 - **Excel** con logos institucionales, datos de los asistentes y sus firmas.
-- **Administradores**: alta por correo autorizado, recuperación de contraseña.
+- **Administradores**: alta por correo autorizado con nombre y teléfono, perfil editable y recuperación de contraseña.
+- **Historial** de movimientos (general y por actividad): inicios de sesión, actividades, registros eliminados, descargas de Excel y cambios de configuración. No se puede editar ni borrar.
 - **Borrado automático** opcional de datos personales (semanal o mensual), conservando estadísticas.
 - Consentimiento de padre, madre o tutor para menores de edad.
 - Instalable como app en la tableta (PWA).
@@ -41,7 +42,7 @@ Aplicación web para registrar la asistencia a las actividades del Instituto de 
 │   └── nueva-contrasena.js
 ├── img/                    Logos e íconos
 ├── supabase/
-│   ├── 1-esquema.sql             Tablas, funciones y políticas
+│   ├── 1-esquema.sql             Tablas, funciones, políticas e historial
 │   └── 2-limpieza-automatica.sql Tarea programada del borrado automático
 ├── manifest.webmanifest
 └── netlify.toml
@@ -79,7 +80,7 @@ Conectar el repositorio en Netlify (*Import an existing project*) o arrastrar la
 
 ## Uso
 
-1. Entrar al sitio. La primera vez, cada administrador usa **Es mi primera vez** para crear su contraseña.
+1. Entrar al sitio. La primera vez, cada administrador usa **Es mi primera vez** para crear su cuenta con nombre, teléfono y contraseña. Desde **Mi perfil** (su nombre en el encabezado) puede editar su nombre, teléfono y contraseña; el correo no se puede cambiar.
 2. En **Panel → Nueva actividad**, crear la actividad. Queda abierta y se muestra su QR.
 3. Desde el menú, **Registrar asistentes** abre el formulario en la tableta. Para salir: mantener presionado el logo 3 segundos e ingresar la contraseña.
 4. Al terminar, **Cerrar registro** y **Descargar Excel**.
@@ -99,3 +100,5 @@ Conectar el repositorio en Netlify (*Import an existing project*) o arrastrar la
 - El formulario público solo puede **insertar** registros en una actividad abierta; no puede leer, modificar ni borrar.
 - Solo los correos en la tabla `personal` pueden crear cuenta y acceder al panel.
 - No se puede quitar al último administrador ni a uno mismo.
+- El historial lo escribe la base de datos (triggers); desde la página solo se puede consultar.
+- Actualizar el esquema: volver a ejecutar `supabase/1-esquema.sql` completo; no borra datos.

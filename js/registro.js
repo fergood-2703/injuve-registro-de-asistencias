@@ -134,6 +134,7 @@
     const { data: ok } = await sb.rpc("es_personal");
     $("sBtn").disabled = false;
     if (!ok) { await sb.auth.signOut(); err.textContent = "Esta cuenta no es del personal autorizado."; err.hidden = false; return; }
+    await App.registrar("inicio_sesion");
     location.href = "index.html";
   });
 

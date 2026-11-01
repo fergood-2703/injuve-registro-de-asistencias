@@ -57,6 +57,20 @@
       return data.session.user;
     },
 
+    // Nombre y teléfono del usuario con sesión
+    async miPerfil() {
+      const { data, error } = await this.sb.rpc("mi_perfil");
+      if (error) throw error;
+      return (data && data[0]) || null;
+    },
+    perfilCompleto: p => !!(p && p.nombre && p.telefono),
+    soloDigitos: t => String(t || "").replace(/\D/g, ""),
+
+    // Deja constancia en el historial (inicio de sesión, descarga de Excel, cambio de contraseña)
+    registrar(accion, actividadId) {
+      return this.sb.rpc("registrar_accion", { p_accion: accion, p_aid: actividadId || null }).then(() => {}, () => {});
+    },
+
     // Abre/cierra un modal (.velo)
     modal(id, abrir) {
       const v = document.getElementById(id);
@@ -79,6 +93,8 @@
       if (/no_puedes_quitarte/.test(m)) return "No puedes quitarte a ti mismo.";
       if (/ultimo_admin/.test(m)) return "No se puede quitar al último administrador.";
       if (/correo_invalido/.test(m)) return "Escribe un correo válido.";
+      if (/nombre_invalido/.test(m)) return "Escribe tu nombre completo.";
+      if (/telefono_invalido/.test(m)) return "El teléfono debe tener 10 dígitos.";
       if (/Failed to fetch|NetworkError|network/i.test(m)) return "No hay conexión con la base de datos. Revisa el internet.";
       return "Algo salió mal. Inténtalo otra vez.";
     }

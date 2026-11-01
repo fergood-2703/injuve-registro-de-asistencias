@@ -83,3 +83,4 @@ textarea.entrada{min-height:120px;resize:vertical;font-size:15px;line-height:1.5
 /* Casilla con texto */
 .casilla{display:flex;gap:12px;align-items:flex-start;font-size:15px;cursor:pointer;text-align:left}
 .casilla input{width:24px;height:24px;flex:none;margin:0;accent-color:var(--verde)}
+.tenue{color:var(--gris)}
