@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Nueva contraseña · INJUVE</title>
+<link rel="icon" href="img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/inicio.css">
+</head>
+<body>
+<main class="escena">
+  <div class="arriba"><img src="img/injuve-texto.png" alt="Instituto de la Juventud · Gobierno de Playa del Carmen"></div>
+  <div class="acceso-medio">
+    <img class="logo-grande" src="img/mascara.png" alt="">
+    <form class="acceso" id="f" novalidate>
+      <h1>Nueva contraseña</h1>
+      <p class="sub" id="sub">Verificando el enlace…</p>
+      <label class="campo"><span>Contraseña nueva <small>mínimo 8 caracteres</small></span><input class="entrada" type="password" id="c1" autocomplete="new-password" disabled></label>
+      <label class="campo"><span>Repite la contraseña</span><input class="entrada" type="password" id="c2" autocomplete="new-password" disabled></label>
+      <div class="alerta err" id="err" hidden></div>
+      <div class="alerta ok" id="ok" hidden></div>
+      <button class="btn verde lg full" type="submit" id="btn" disabled>Guardar contraseña</button>
+      <div class="pie"><a class="link" href="index.html">← Volver al inicio</a></div>
+    </form>
+  </div>
+  <div></div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/comun.js"></script>
+<script src="js/nueva-contrasena.js"></script>
+</body>
+</html>

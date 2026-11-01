@@ -99,4 +99,3 @@ Conectar el repositorio en Netlify (*Import an existing project*) o arrastrar la
 - El formulario público solo puede **insertar** registros en una actividad abierta; no puede leer, modificar ni borrar.
 - Solo los correos en la tabla `personal` pueden crear cuenta y acceder al panel.
 - No se puede quitar al último administrador ni a uno mismo.
-# injuve-registro-de-asistencias

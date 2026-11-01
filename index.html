@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F7F1E5">
+<title>INJUVE · Registro de asistencia</title>
+<link rel="icon" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/inicio.css">
+</head>
+<body>
+
+<!-- Acceso -->
+<main class="escena" id="escenaAcceso" hidden>
+  <div class="arriba"><img class="anim" src="img/injuve-texto.png" alt="Instituto de la Juventud · Gobierno de Playa del Carmen"></div>
+  <div class="acceso-medio">
+    <div class="centro" aria-hidden="true">
+      <svg class="anillo" viewBox="0 0 400 400"></svg>
+      <img class="mascara anim" src="img/mascara.png" alt="">
+    </div>
+
+    <!-- Entrar -->
+    <form class="acceso anim" id="fEntrar" novalidate>
+      <h1>Entrar</h1>
+      <p class="sub">Solo personal de INJUVE.</p>
+      <label class="campo"><span>Correo</span><input class="entrada" type="email" id="eCorreo" autocomplete="username" required></label>
+      <label class="campo"><span>Contraseña</span><input class="entrada" type="password" id="eClave" autocomplete="current-password" required></label>
+      <div class="alerta err" id="eErr" hidden></div>
+      <button class="btn verde lg full" type="submit" id="eBtn">Entrar</button>
+      <div class="pie"><button class="link" type="button" data-modo="primera">Es mi primera vez</button><button class="link" type="button" data-modo="olvido">¿Olvidaste tu contraseña?</button></div>
+    </form>
+
+    <!-- Primera vez -->
+    <form class="acceso" id="fPrimera" novalidate hidden>
+      <h1>Es mi primera vez</h1>
+      <p class="sub">Crea tu contraseña. Tu correo debe estar autorizado por un administrador.</p>
+      <label class="campo"><span>Correo autorizado</span><input class="entrada" type="email" id="pCorreo" autocomplete="username" required></label>
+      <label class="campo"><span>Contraseña nueva <small>mínimo 8 caracteres</small></span><input class="entrada" type="password" id="pClave" autocomplete="new-password" required></label>
+      <label class="campo"><span>Repite la contraseña</span><input class="entrada" type="password" id="pClave2" autocomplete="new-password" required></label>
+      <div class="alerta err" id="pErr" hidden></div>
+      <div class="alerta ok" id="pOk" hidden></div>
+      <button class="btn verde lg full" type="submit" id="pBtn">Crear mi contraseña</button>
+      <div class="pie"><button class="link" type="button" data-modo="entrar">← Ya tengo contraseña</button></div>
+    </form>
+
+    <!-- Recuperar contraseña -->
+    <form class="acceso" id="fOlvido" novalidate hidden>
+      <h1>Recuperar contraseña</h1>
+      <p class="sub">Te mandaremos un correo con un enlace para crear una contraseña nueva.</p>
+      <label class="campo"><span>Correo</span><input class="entrada" type="email" id="oCorreo" autocomplete="username" required></label>
+      <div class="alerta err" id="oErr" hidden></div>
+      <div class="alerta ok" id="oOk" hidden></div>
+      <button class="btn verde lg full" type="submit" id="oBtn">Enviar enlace</button>
+      <div class="pie"><button class="link" type="button" data-modo="entrar">← Volver</button></div>
+    </form>
+  </div>
+  <div class="abajo anim"><img src="img/gobierno.png" alt="H. Ayuntamiento y Gobierno de Playa del Carmen"></div>
+</main>
+
+<!-- Menú del personal -->
+<main class="escena" id="escenaInicio" hidden>
+  <div class="arriba"><img class="anim" src="img/injuve-texto.png" alt="Instituto de la Juventud · Gobierno de Playa del Carmen"></div>
+
+  <div class="medio">
+    <button class="op izq anim" id="opRegistro" type="button">
+      <span class="ceja"><span class="flecha">←</span> Asistentes</span>
+      <h2>Registrar asistentes</h2>
+      <p>Formulario con firma en esta tableta, o QR para celulares.</p>
+      <span class="estado apagado" id="estReg"><span class="punto"></span><span id="estRegTxt">Revisando…</span></span>
+      <span class="barra"></span>
+    </button>
+
+    <div class="centro" aria-hidden="true">
+      <svg class="anillo" id="anilloInicio" viewBox="0 0 400 400"></svg>
+      <img class="mascara anim" id="mascaraInicio" src="img/mascara.png" alt="">
+    </div>
+
+    <button class="op der anim" id="opPanel" type="button">
+      <span class="ceja">Solo personal <span class="flecha">→</span></span>
+      <h2>Panel de administración</h2>
+      <p>Actividades, lista de asistentes, QR, Excel con firmas y configuración.</p>
+      <span class="estado naranja"><span class="punto"></span><span id="estPanelTxt">—</span></span>
+      <span class="barra"></span>
+    </button>
+  </div>
+
+  <div class="abajo anim">
+    <img src="img/gobierno.png" alt="H. Ayuntamiento y Gobierno de Playa del Carmen">
+    <div class="quien"><span>Hola, <b id="quien"></b></span><button class="link" type="button" id="salir">Cerrar sesión</button></div>
+  </div>
+</main>
+
+<!-- Error de configuración o conexión -->
+<main class="escena" id="escenaError" hidden>
+  <div class="arriba"><img src="img/injuve-texto.png" alt="Instituto de la Juventud"></div>
+  <div class="acceso-medio"><div class="acceso"><h1>No disponible</h1><p class="sub" id="errTxt"></p></div></div>
+  <div></div>
+</main>
+
+<!-- Aviso: no hay actividad abierta -->
+<div class="velo" id="sinActividad" role="dialog" aria-modal="true" aria-labelledby="saTitulo">
+  <div class="estela">
+    <div class="cap greca"></div>
+    <div class="cuerpo">
+      <div class="mini"><img src="img/mascara.png" alt=""></div>
+      <h3 id="saTitulo">Aún no hay ninguna actividad abierta</h3>
+      <p>Para empezar a registrar asistentes, crea una actividad nueva o abre una que ya exista desde el panel.</p>
+      <div class="botones">
+        <button class="btn verde" id="saIr" type="button">Ir al panel y crear actividad</button>
+        <button class="btn suave" id="saCerrar" type="button">Ahora no</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Transición entre páginas -->
+<div class="cortina" id="cortina" aria-hidden="true">
+  <div class="dentro"><div class="insignia"><img src="img/mascara.png" alt=""></div><h2 id="cortinaTxt"></h2></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/comun.js"></script>
+<script src="js/inicio.js"></script>
+</body>
+</html>

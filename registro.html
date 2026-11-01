@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#397D44">
+<title>Registro de asistencia · INJUVE</title>
+<link rel="icon" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/registro.css">
+</head>
+<body>
+
+<!-- Estados: cargando, sin código o registro cerrado -->
+<section class="pantalla" id="pEstado">
+  <div class="caja">
+    <img class="m" src="img/mascara.png" alt="">
+    <h1 id="pTitulo">Cargando…</h1>
+    <p id="pTexto">Conectando con la lista de asistencia.</p>
+    <button class="btn suave" id="pReintentar" type="button" hidden>Volver a revisar</button>
+  </div>
+</section>
+
+<!-- Formulario -->
+<div id="vista" hidden>
+  <header class="cabeza">
+    <div class="dentro">
+      <div class="marca">
+        <div class="insignia" id="insignia" aria-hidden="true">
+          <img src="img/mascara.png" alt="">
+          <svg viewBox="0 0 104 104"><circle cx="52" cy="52" r="50"/></svg>
+        </div>
+        <img class="texto" src="img/injuve-texto-blanco.png" alt="Instituto de la Juventud · Gobierno de Playa del Carmen">
+      </div>
+      <span class="ceja">Registro de asistencia</span>
+      <h1 id="actNombre"></h1>
+      <span class="cuando" id="actFecha"></span>
+    </div>
+    <div class="greca w"></div>
+  </header>
+
+  <main class="cuerpo-form">
+    <form class="registro" id="form" novalidate>
+      <label class="campo"><span>Nombre completo <b class="req">*</b></span>
+        <input class="entrada" type="text" id="nombre" autocomplete="off" autocapitalize="words" placeholder="Nombre y apellidos">
+      </label>
+
+      <fieldset><legend>Rango de edad <b class="req">*</b></legend><div class="opciones" id="edades"></div></fieldset>
+      <fieldset><legend>Género <b class="req">*</b></legend><div class="opciones" id="generos"></div></fieldset>
+
+      <div class="dos">
+        <label class="campo"><span>Teléfono <small>10 dígitos</small></span>
+          <input class="entrada" type="tel" id="tel" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="984 000 0000">
+        </label>
+        <label class="campo"><span>Correo electrónico <small>opcional</small></span>
+          <input class="entrada" type="email" id="correo" autocomplete="off" autocapitalize="off" placeholder="nombre@correo.com">
+        </label>
+      </div>
+
+      <div class="menor" id="menor" hidden>
+        <h3>Asistente menor de edad</h3>
+        <label class="campo"><span>Nombre del padre, madre o tutor <b class="req">*</b></span>
+          <input class="entrada" type="text" id="tutor" autocomplete="off" autocapitalize="words">
+        </label>
+        <label class="casilla"><input type="checkbox" id="tutorOk"><span>Como padre, madre o tutor, autorizo el registro de estos datos y la firma de asistencia.</span></label>
+      </div>
+
+      <div>
+        <div class="firma-cab"><h3>Firma <b class="req">*</b></h3><button class="btn suave sm" type="button" id="borrarFirma">Borrar firma</button></div>
+        <div class="firma">
+          <span class="esq e1"></span><span class="esq e2"></span><span class="esq e3"></span><span class="esq e4"></span>
+          <div class="linea-base"></div>
+          <div class="guia" id="guia">Firma aquí con el dedo o con el lápiz</div>
+          <canvas id="lienzo" aria-label="Recuadro para firmar"></canvas>
+        </div>
+      </div>
+
+      <label class="casilla"><input type="checkbox" id="avisoOk"><span>Acepto el aviso de privacidad. <b class="req">*</b></span></label>
+      <details class="aviso"><summary>Leer aviso de privacidad</summary><p id="avisoTxt"></p></details>
+
+      <div class="alerta err" id="error" hidden></div>
+      <button class="btn rojo full enviar" type="submit" id="enviar">Registrar mi asistencia →</button>
+    </form>
+  </main>
+
+  <footer class="pie-form">
+    <img src="img/gobierno.png" alt="H. Ayuntamiento y Gobierno de Playa del Carmen">
+    <span>Tus datos se protegen conforme al aviso de privacidad.</span>
+  </footer>
+</div>
+
+<!-- Pantalla de gracias -->
+<div class="gracias" id="gracias" role="status" aria-live="polite">
+  <div class="greca g-arriba" id="gA"></div><div class="greca g-abajo" id="gB"></div>
+  <div class="arte" id="arte"></div>
+  <h1 id="gTitulo"></h1>
+  <p id="gTexto"></p>
+  <div class="cuenta">
+    <svg width="54" height="54" viewBox="0 0 54 54"><circle class="pista" cx="27" cy="27" r="22"/><circle class="valor" id="gValor" cx="27" cy="27" r="22"/><text x="27" y="33" text-anchor="middle" id="gNum">8</text></svg>
+    <span>En unos segundos se abre el formulario<br>para la siguiente persona</span>
+  </div>
+  <button class="btn otra" id="otra" type="button">Registrar a otra persona ahora</button>
+</div>
+
+<!-- Salir del registro (solo personal) -->
+<div class="velo" id="salida" role="dialog" aria-modal="true" aria-labelledby="sTitulo">
+  <div class="estela verde">
+    <div class="cap greca"></div>
+    <div class="cuerpo">
+      <div class="mini"><img src="img/mascara.png" alt=""></div>
+      <h3 id="sTitulo">Salir del registro</h3>
+      <p>Solo para el personal de INJUVE.</p>
+      <form id="fSalida" novalidate>
+        <label class="campo" id="sCorreoCampo" hidden><span>Correo</span><input class="entrada" type="email" id="sCorreo" autocomplete="username"></label>
+        <label class="campo"><span>Contraseña</span><input class="entrada" type="password" id="sClave" autocomplete="current-password"></label>
+        <div class="alerta err" id="sErr" hidden></div>
+        <div class="botones fila">
+          <button class="btn verde" type="submit" id="sBtn">Salir al menú</button>
+          <button class="btn suave" type="button" id="sCancelar">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/comun.js"></script>
+<script src="js/firma.js"></script>
+<script src="js/gracias.js"></script>
+<script src="js/registro.js"></script>
+</body>
+</html>
