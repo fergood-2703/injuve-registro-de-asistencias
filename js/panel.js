@@ -14,6 +14,7 @@
     datos_limpiados:     ["actividades", h => "limpió los datos personales de " + act(h) + (h.detalle ? " (" + h.detalle + ")" : "")],
     registro_eliminado:  ["registros",   h => "eliminó el registro de " + fuerte(h.detalle) + " en " + act(h)],
     excel_descargado:    ["excel",       h => "descargó el Excel de " + act(h)],
+    word_descargado:     ["excel",       h => "descargó la lista en Word de " + act(h)],
     cuenta_creada:       ["cuentas",      h => "creó su cuenta"],
     perfil_actualizado:  ["cuentas",      h => "actualizó su perfil"],
     contrasena_cambiada: ["cuentas",      h => "cambió su contraseña"],
@@ -135,7 +136,7 @@
     const a = acts.find(x => x.id === sel);
     $("detalle").hidden = !a; if (!a) return;
     $("dTitulo").textContent = a.nombre;
-    $("dQr").hidden = a.limpiada; $("dExcel").hidden = a.limpiada;
+    $("dQr").hidden = a.limpiada; $("dExcel").hidden = a.limpiada; $("dWord").hidden = a.limpiada;
     cargarHistorialActividad(a.id);
     if (a.limpiada) {
       $("dTabla").hidden = true; $("dEstad").hidden = false;
@@ -185,6 +186,19 @@
       cargarHistorialActividad(a.id);
     } catch (e) { App.toast("No se pudo generar el Excel. Revisa la conexión e inténtalo otra vez."); }
     b.disabled = false; b.textContent = "Descargar Excel";
+  });
+
+  // Lista en el formato oficial de Word (25 personas por hoja)
+  $("dWord").addEventListener("click", async () => {
+    const a = acts.find(x => x.id === sel); if (!a) return;
+    const b = $("dWord"); b.disabled = true; b.textContent = "Preparando…";
+    try {
+      await WordAsistencia.generar(a, regs);
+      await App.registrar("word_descargado", a.id);
+      App.toast("Lista en Word descargada.");
+      cargarHistorialActividad(a.id);
+    } catch (e) { App.toast("No se pudo generar el Word. Revisa la conexión e inténtalo otra vez."); }
+    b.disabled = false; b.textContent = "Descargar Word";
   });
 
   // QR

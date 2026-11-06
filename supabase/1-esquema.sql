@@ -68,13 +68,13 @@ end;
 $$;
 revoke execute on function public._evento(text, uuid, text, text) from public, anon, authenticated;
 
--- Movimientos que registra la página: inicio de sesión, descarga de Excel y cambio de contraseña
+-- Movimientos que registra la página: inicio de sesión, descarga de Excel o Word y cambio de contraseña
 create or replace function public.registrar_accion(p_accion text, p_aid uuid default null)
 returns void language plpgsql security definer set search_path = public as $$
 declare anom text;
 begin
   if not public.es_personal() then raise exception 'no_autorizado'; end if;
-  if p_accion not in ('inicio_sesion', 'excel_descargado', 'contrasena_cambiada') then
+  if p_accion not in ('inicio_sesion', 'excel_descargado', 'word_descargado', 'contrasena_cambiada') then
     raise exception 'accion_invalida';
   end if;
   if p_aid is not null then select nombre into anom from public.actividades where id = p_aid; end if;
